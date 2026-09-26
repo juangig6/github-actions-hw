@@ -1,0 +1,33 @@
+name: K8s Deploy Test
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  kind-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取出程式碼
+        uses: actions/checkout@v4
+
+      - name: 使用 kind 建立 Kubernetes 叢集
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: hw-cluster
+
+      - name: 確認叢集資訊
+        run: |
+          kubectl cluster-info
+          kubectl get nodes -o wide
+
+      - name: 部署應用程式（原生 YAML）
+        run: kubectl apply -f k8s/
+
+      - name: 以 Shell Script 驗證服務
+        run: bash scripts/verify.sh
+
+      - name: 顯示叢集資源（不論成功失敗都執行）
+        if: always()
+        run: kubectl get all -o wide
